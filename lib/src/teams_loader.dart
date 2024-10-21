@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:owl_history/src/owl_team.dart';
+import 'owl_team.dart';
 
 class TeamsLoader extends ValueNotifier<TeamsLoaderState> {
   TeamsLoader() : super(Loading()) {
@@ -11,6 +11,7 @@ class TeamsLoader extends ValueNotifier<TeamsLoaderState> {
   }
 
   Future<void> loadFiles() async {
+    final stopwatch = Stopwatch()..start();
     final filePaths = Directory('assets/teams')
         .listSync()
         .whereType<File>()
@@ -24,18 +25,22 @@ class TeamsLoader extends ValueNotifier<TeamsLoaderState> {
       owlTeams.add(future);
     }
 
-    var wait = await owlTeams.wait;
+    final wait = await owlTeams.wait;
+    stopwatch.stop();
+    debugPrint('Full setup time: ${stopwatch.elapsed}');
     value = Success(wait);
   }
 }
 
-OwlTeam _parseJsonFileToTeam(String filePath) => OwlTeam.fromJson(
-      jsonDecode(File(filePath).readAsStringSync()),
-    );
+OwlTeam _parseJsonFileToTeam(String filePath) {
+  final fileContent = File(filePath).readAsStringSync();
+
+  return OwlTeam.fromJson(jsonDecode(fileContent));
+}
 
 sealed class TeamsLoaderState {}
 
-class Loading extends TeamsLoaderState {}
+final class Loading extends TeamsLoaderState {}
 
 class Success extends TeamsLoaderState {
   final List<OwlTeam> teams;
